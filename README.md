@@ -1,131 +1,74 @@
-## Frappe ReST API Wrapper
+<p align="center">
+  <a href="https://empress.eco/">
+    <img src="https://grow.empress.eco/uploads/default/original/2X/1/1f1e1044d3864269d2a613577edb9763890422ab.png" alt="Logo" width="80" height="80">
+  </a>
+  <h3 align="center">Elevate Your API Creation with Empress</h3>
+  <p align="center">
+    A powerful, user-friendly tool for streamlined and efficient custom API creation.
+    <br />
+    <a href="https://grow.empress.eco/"><strong>Explore the Documentation »</strong></a>
+    <br />
+    <br />
+    <a href="https://grow.empress.eco/">Support</a>
+    ·
+    <a href="https://github.com/empress-eco/build_custom_rest_api/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/empress-eco/build_custom_rest_api/issues">Request Feature</a>
+  </p>
+</p>
 
+## About The Project
+The Empress Custom REST API Builder is designed for developers who aim to build and manage custom APIs with ease and efficiency. This tool saves time, ensures uniformity across applications, and enhances your API creation process.
+
+### Key Features
+- Hassle-free API creation
+- Consistent JSON responses for uniformity
+- Middleware support for additional functionality
+- Robust error handling for smooth operation
+
+This project is built with [Empress](https://Empress.io/), a major framework renowned for its simplicity and efficiency.
+
+## Technical Stack and Setup Instructions
+### Prerequisites
+Ensure Empress is installed on your system.
 
 ### Installation
-``` sh
-$ bench get-app https://github.com/palanskiheji/restipie.git
+To set up your development environment, follow these steps:
+
+1. Clone the repository from the command line:
+```sh
+$ git clone https://github.com/empress-eco/build_custom_rest_api.git
 ```
-### Prerequisite
-You should have frappe installed.
-Edit apps/frappe/frappe/app.py, and add elif block as shown in lines 10 to 12.
-
-``` python
-1    @Request.application
-2    def application(request):
-3        response = None
-4
-5        try:
-6             ...
-7             if frappe.local.form_dict.cmd:
-8                response = frappe.handler.handle()
-9
-10            elif frappe.request.path.startswith("/v1/"):
-11                from restipie.restipie import handle_req
-12                response =  handle_req()
-13
-14            elif frappe.request.path.startswith("/api/"):
-15                response = frappe.api.handle()
-16            ...
+2. Navigate into the project folder:
+```sh
+$ cd build_custom_rest_api
 ```
-The above code will direct incoming request to "/v1/api/" to our custom handler.
-
-### Adding custom ReST 
-Declare a function that accepts *args and **kwargs parameters and decorate it with the api function decorator as shown below.
-```python
-    from restipie.custom_api_core import request
-    from restipie.custom_api_core import response
-
-
-    @request.api("POST", "/v1/api/test/users")
-    def create_user(*args, **kwargs):
-        try:
-            data = kwargs.get("data")
-
-            #don't bake the business logic here, put it in the service layer.
-
-            return response.JSONResponse(
-                message="Successfully created user!",
-                data=data
-            )
-        except Exception as e:
-            raise e
-
+3. Install the project using bench:
+```sh
+$ bench get-app .
 ```
-For uniformity, json responses are handled by response.JSONResponse class
-### Using [JSON Schema](https://json-schema.org/specification.html) to describe our data format and [jsonschema](https://python-jsonschema.readthedocs.io/en/v3.2.0/) to validate.
-An example of json schema declaration for an imaginary user.
-```python
-    user_schema = {
-        "$schema":"http://json-schema.org/draft-07/schema#",
-        "title":"Test User",
-        "type" : "object",
-        "properties" : {
-            "email" : {
-                "type" : "string",
-                "format": "email",
-                "description": "Email of the user"
-                },
-            "fullname" : {"type" : "string"},
-            "age": {"type" : "integer", "minimum": 18}
-        },
-        "required": ["email", "fullname"]
-    }
-```
-### Using middlewares
-The request.api decorator accepts a middleware key argument which is a tuple of functions.
-Here we use request.validate_schema to validate kwargs.get("data")(which contains the request body) againts our defined schema.
-```python
-    ...
-    from .schema import user_schema
 
-    @request.api("POST", "/v1/api/test/users", middlewares=(request.validate_schema(user_schema)))
-    def create_user(*args, **kwargs):
-        try:
-            data = kwargs.get("data")
+## Usage
+With Empress Custom REST API Builder, you can easily create and manage your APIs. Here's a quick start guide:
 
-            #don't bake the business logic here, put it in the service layer.
+1. Declare a function that accepts `*args` and `**kwargs` parameters and decorate it with the api function decorator.
+2. Use our `response.JSONResponse` class to handle JSON responses uniformly.
+3. Use JSON Schema to describe your data format and jsonschema to validate it.
+4. Use the `request.api` decorator to validate your data against a defined schema.
+5. Implement middlewares to validate user tokens, session ids, or any additional functionality.
 
-            return response.JSONResponse(
-                message="Successfully created user!",
-                data=data
-            )
-        except Exception as e:
-            raise e
-```
-Middlewares are executed in order they are declared in the tuple.
+You can find detailed information and code examples in our [documentation](https://grow.empress.eco/).
 
-### Middleware declaration
-This is an example of a middleware that validates user token and session id.
-You can can add values to args and kwargs here. Just keep in mind that these arguments are not immutable so make sure that you know the side effects if you add, update or delete values from them. 
-One thing to note here is that we want to return the args and kwargs as a tuple (for convenience) as it will be passed to the next middleware.
+## Contribution Guidelines
+We welcome and appreciate contributions! Here's how you can contribute:
 
-```python
-    def authenticate(*args, **kwargs):
-        token = frappe.get_request_header("Authorization")
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-        decoded = validate_token(token)                 #this raises an 'Unauthorized' exception if token is invalid
-        validate_session(decoded.get("sid"))            #this raises an 'Unauthorized' exception if session id is invalid
+## License and Acknowledgements
+This project is licensed under the MIT License. Your contributions are also licensed under the MIT License.
 
-        # set user only after token and session validation
-        user = frappe.get_doc("User", { "email": decoded.get("user") })
-        frappe.set_user(user.name)
-
-        kwargs["decoded"] = decoded
-        return args, kwargs
-
-```
-### Error handling
-Exceptions raised inside of the handler and middleware will propagate to the main handler and will be sent to the client as json.
-
-```python
-    @request.api("GET", "/v1/api/test/users/<id>", middlewares=(authenticate))
-    def get_one_user(*args, **kwargs):
-        try:
-            user_id = kwargs.get("params").get("id")
-
-                #don't bake the business logic here, put it in the service layer.
-
-            return response.JSONResponse(data={})
-        except Exception as e:
-            raise e
-```
+We extend our heartfelt gratitude to the Empress Community for their foundational contributions to this project. Their innovation and dedication have been instrumental in shaping the functionalities we rely on, and we are profoundly grateful for their support.
